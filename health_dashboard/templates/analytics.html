@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block page_title %}Health Analytics & Visualizations{% endblock %}
+{% block page_subtitle %}Deep multivariate behavioral correlations, day-of-week patterns, and monthly statistics{% endblock %}
+
+{% block content %}
+<!-- Row 1: Weekly Day-of-Week Comparison & Monthly Trends -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="health-card mb-0 h-100">
+            <div class="card-header-flex">
+                <h5 class="card-title"><i class="bi bi-calendar-week text-primary"></i> Day-of-Week Activity Habits</h5>
+                <span class="badge bg-light text-secondary border">Monday &ndash; Sunday Averages</span>
+            </div>
+            <p class="text-muted small mb-3">Compares your mobility (steps) and active workout duration across different days of the week.</p>
+            <div style="height: 290px; position: relative;">
+                <canvas id="dowComparisonChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="health-card mb-0 h-100">
+            <div class="card-header-flex">
+                <h5 class="card-title"><i class="bi bi-calendar3 text-danger"></i> Monthly Health Aggregations</h5>
+                <span class="badge bg-light text-secondary border">Heart Rate vs Sleep</span>
+            </div>
+            <p class="text-muted small mb-3">Tracks month-over-month averages of resting cardiac rate and nightly sleep recovery.</p>
+            <div style="height: 290px; position: relative;">
+                <canvas id="monthlySummaryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Correlation Heatmap Matrix -->
+<div class="health-card mb-4">
+    <div class="card-header-flex">
+        <div>
+            <h5 class="card-title"><i class="bi bi-diagram-3-fill text-teal"></i> Biometric Correlation Matrix (Pearson's r)</h5>
+            <small class="text-muted">Quantifies linear statistical relationships between pairs of wearable health indicators (-1.0 to +1.0).</small>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-success-subtle text-success border">Strong Positive (+0.7 to +1.0)</span>
+            <span class="badge bg-warning-subtle text-danger border">Inverse (-0.5 to -1.0)</span>
+        </div>
+    </div>
+    <div id="correlationMatrixContainer" class="p-2">
+        <div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span> Calculating correlation coefficients...</div>
+    </div>
+</div>
+
+<!-- Row 3: Scatter Correlation Visualizations -->
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="health-card mb-0 h-100">
+            <div class="card-header-flex">
+                <h5 class="card-title"><i class="bi bi-fire text-primary"></i> Daily Steps vs Calories Burned</h5>
+                <span class="badge bg-light text-secondary border">Energy Expenditure</span>
+            </div>
+            <p class="text-muted small mb-2">Each point represents one recorded day showing the positive relationship between distance walked and metabolic caloric burn.</p>
+            <div style="height: 280px; position: relative;">
+                <canvas id="scatterStepsCalChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="health-card mb-0 h-100">
+            <div class="card-header-flex">
+                <h5 class="card-title"><i class="bi bi-heart-pulse-fill text-teal"></i> Active Minutes vs Resting Heart Rate</h5>
+                <span class="badge bg-light text-secondary border">Cardiovascular Fitness</span>
+            </div>
+            <p class="text-muted small mb-2">Examines whether higher physical activity correlates with improved resting heart rate efficiency.</p>
+            <div style="height: 280px; position: relative;">
+                <canvas id="scatterActiveHrChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

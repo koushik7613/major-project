@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block page_title %}Profile & Health Goals{% endblock %}
+{% block page_subtitle %}Manage your demographic parameters, daily wellness targets, and local data storage{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Profile & Goals Form -->
+    <div class="col-lg-8">
+        <div class="health-card">
+            <h5 class="fw-bold mb-3"><i class="bi bi-person-gear text-primary me-2"></i>Personal Demographics & Physical Parameters</h5>
+            <form method="POST" action="{{ url_for('auth.profile') }}">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-secondary">Full Name</label>
+                        <input type="text" name="full_name" class="form-control" value="{{ user.full_name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-secondary">Username (Locked)</label>
+                        <input type="text" class="form-control bg-light" value="{{ user.username }}" readonly>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold text-secondary">Age</label>
+                        <input type="number" name="age" class="form-control" value="{{ user.age }}" min="10" max="110">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold text-secondary">Gender</label>
+                        <select name="gender" class="form-select">
+                            <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold text-secondary">Weight (kg)</label>
+                        <input type="number" step="0.5" name="weight_kg" class="form-control" value="{{ user.weight_kg }}">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold text-secondary">Height (cm)</label>
+                        <input type="number" step="0.5" name="height_cm" class="form-control" value="{{ user.height_cm }}">
+                    </div>
+                </div>
+
+                <h5 class="fw-bold mb-3 border-top pt-3"><i class="bi bi-bullseye text-teal me-2"></i>Personal Daily Health Targets</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-secondary">Daily Step Target</label>
+                        <div class="input-group">
+                            <input type="number" name="daily_step_goal" class="form-control" value="{{ user.daily_step_goal }}" step="500">
+                            <span class="input-group-text small">steps</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-secondary">Sleep Target</label>
+                        <div class="input-group">
+                            <input type="number" step="0.5" name="sleep_goal_hours" class="form-control" value="{{ user.sleep_goal_hours }}">
+                            <span class="input-group-text small">hours</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-secondary">Active Exercise Target</label>
+                        <div class="input-group">
+                            <input type="number" name="active_min_goal" class="form-control" value="{{ user.active_min_goal }}">
+                            <span class="input-group-text small">mins</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary-custom px-4">
+                        <i class="bi bi-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Privacy & Local Storage Side Card -->
+    <div class="col-lg-4">
+        <!-- Storage Summary Card -->
+        <div class="health-card mb-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-database-check text-primary me-2"></i>Local Storage Status</h6>
+            <div class="p-3 bg-light rounded-3 border mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Total Records:</span>
+                    <strong class="text-primary">{{ record_count }} days</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Uploaded Files:</span>
+                    <strong class="text-dark">{{ files|length }} files</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Database:</span>
+                    <span class="badge bg-light text-secondary border">Local SQLite3</span>
+                </div>
+            </div>
+
+            <div class="p-3 border rounded bg-light small text-secondary">
+                <i class="bi bi-shield-lock-fill text-success me-1"></i>
+                <strong>Local-First Architecture:</strong> All health metrics are stored locally in your SQLite database. Your data is not transmitted to third-party tracking services.
+            </div>
+        </div>
+
+        <!-- Danger Zone: Wipe Data -->
+        <div class="health-card border-danger-subtle">
+            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-trash3 text-danger me-2"></i>Delete User Health Data</h6>
+            <p class="text-muted small mb-3">Permanently removes all uploaded CSV records, anomaly reports, and conversation history for your account.</p>
+            <form method="POST" action="{{ url_for('auth.clear_data') }}" onsubmit="return confirm('WARNING: This will permanently delete all your health records. Are you sure?');">
+                <button type="submit" class="btn btn-outline-danger w-100 btn-sm py-2">
+                    <i class="bi bi-trash me-1"></i> Wipe All Stored Data
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

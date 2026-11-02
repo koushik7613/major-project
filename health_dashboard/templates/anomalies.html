@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block page_title %}Machine Learning Anomaly Detection{% endblock %}
+{% block page_subtitle %}Identify atypical physiological patterns and outliers using Isolation Forest and statistical baselines{% endblock %}
+
+{% block content %}
+<!-- Engine Control Header -->
+<div class="health-card mb-4">
+    <div class="row align-items-center g-3">
+        <div class="col-lg-7">
+            <h5 class="fw-bold mb-1"><i class="bi bi-cpu-fill text-primary me-2"></i>Isolation Forest Outlier Detection Engine</h5>
+            <p class="text-muted small mb-0">
+                Our machine learning pipeline continuously computes multi-dimensional isolation trees over steps, resting pulse, sleep volume, and activity minutes. It isolates atypical health days without assuming parametric normality.
+            </p>
+        </div>
+        <div class="col-lg-5 text-lg-end">
+            <button id="btnRunAnomalyML" class="btn btn-primary-custom px-4 py-2">
+                <i class="bi bi-play-circle-fill me-1"></i> Re-Run ML Anomaly Detection
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="health-card p-3 mb-4">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+            <span class="fw-semibold text-secondary small"><i class="bi bi-funnel me-1"></i> Filter Anomalies:</span>
+        </div>
+        <div class="col-md-4">
+            <select id="anomalyMetricFilter" class="form-select form-select-sm">
+                <option value="all">All Metrics</option>
+                <option value="Heart Rate">Resting Heart Rate</option>
+                <option value="Steps">Daily Steps</option>
+                <option value="Sleep">Sleep Duration</option>
+                <option value="Activity">Physical Activity</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select id="anomalySeverityFilter" class="form-select form-select-sm">
+                <option value="all">All Severities</option>
+                <option value="High">High Severity</option>
+                <option value="Moderate">Moderate Severity</option>
+                <option value="Mild">Mild Severity</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Anomalies Table -->
+<div class="health-card">
+    <div class="card-header-flex">
+        <h5 class="card-title">
+            <i class="bi bi-shield-exclamation text-danger"></i> Detected Health Pattern Anomalies
+            <span class="badge bg-danger-subtle text-danger ms-2">{{ anomalies|length }} Outliers</span>
+        </h5>
+        <span class="text-muted small">Updated dynamically upon CSV ingestion</span>
+    </div>
+
+    {% if anomalies %}
+    <div class="table-responsive">
+        <table class="table health-table align-middle mb-0" id="anomalyMainTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Metric Affected</th>
+                    <th>Actual Value</th>
+                    <th>Historical Baseline</th>
+                    <th>Deviation</th>
+                    <th>Severity</th>
+                    <th>Analytical Explanation</th>
+                </tr>
+            </thead>
+            <tbody id="anomalyTableBody">
+                {% for a in anomalies %}
+                <tr data-metric="{{ a.metric_name }}" data-severity="{{ a.severity }}">
+                    <td class="fw-semibold text-secondary text-nowrap">{{ a.record_date }}</td>
+                    <td>
+                        <strong class="text-dark">
+                            {% if 'Heart' in a.metric_name %}<i class="bi bi-heart-pulse-fill text-danger me-1"></i>
+                            {% elif 'Steps' in a.metric_name %}<i class="bi bi-person-walking text-primary me-1"></i>
+                            {% elif 'Sleep' in a.metric_name %}<i class="bi bi-moon-stars text-indigo me-1"></i>
+                            {% else %}<i class="bi bi-fire text-warning me-1"></i>{% endif %}
+                            {{ a.metric_name }}
+                        </strong>
+                    </td>
+                    <td><strong class="text-dark">{{ a.actual_value }}</strong></td>
+                    <td class="text-muted">{{ a.baseline_value }}</td>
+                    <td>
+                        {% if a.deviation_pct > 0 %}
+                            <span class="badge bg-danger-subtle text-danger">+{{ a.deviation_pct }}%</span>
+                        {% else %}
+                            <span class="badge bg-warning-subtle text-warning">{{ a.deviation_pct }}%</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if a.severity == 'High' %}
+                            <span class="badge bg-danger text-white">High</span>
+                        {% elif a.severity == 'Moderate' %}
+                            <span class="badge bg-warning text-dark">Moderate</span>
+                        {% else %}
+                            <span class="badge bg-info text-dark">Mild</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-secondary" style="max-width: 320px;">
+                        {{ a.explanation }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-shield-check text-success fs-1 mb-2 d-block"></i>
+        <h5 class="fw-bold text-dark">No Anomalies Detected</h5>
+        <p class="small">Either all recorded biometric metrics conform to your statistical baseline, or not enough days are logged yet.</p>
+        <button class="btn btn-outline-primary btn-sm btn-load-sample-data">Load 90-Day Sample with Authentic Anomalies</button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/anomalies.js') }}"></script>
+{% endblock %}

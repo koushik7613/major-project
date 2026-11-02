@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block page_title %}Time-Series Health Forecasting{% endblock %}
+{% block page_subtitle %}Predict future health metrics using autoregressive regression and evaluate accuracy with RMSE{% endblock %}
+
+{% block content %}
+<!-- Forecast Controls -->
+<div class="health-card mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-md-5">
+            <label class="form-label small fw-semibold text-secondary mb-1">Select Metric to Forecast</label>
+            <select id="forecastMetricSelect" class="form-select">
+                <option value="steps" selected>Daily Steps (Step Count)</option>
+                <option value="avg_heart_rate">Average Heart Rate (bpm)</option>
+                <option value="resting_heart_rate">Resting Heart Rate (bpm)</option>
+                <option value="sleep_hours">Sleep Duration (hours)</option>
+                <option value="active_minutes">Physical Activity (minutes)</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-secondary mb-1">Forecast Horizon</label>
+            <select id="forecastHorizonSelect" class="form-select">
+                <option value="7" selected>Next 7 Days</option>
+                <option value="14">Next 14 Days</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button id="btnRunForecast" class="btn btn-primary-custom w-100 py-2">
+                <i class="bi bi-graph-up-arrow me-1"></i> Compute Forecast
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Status container when insufficient data -->
+<div id="forecastStatusContainer" class="d-none mb-4"></div>
+
+<!-- Forecast Main Display Container -->
+<div id="forecastChartContainer">
+    <!-- Model Performance & Evaluation Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="health-card mb-0 p-3 bg-light border-primary-subtle text-center">
+                <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Model Accuracy (RMSE)</span>
+                <h3 class="fw-bold text-primary mb-1" id="evalRmse">--</h3>
+                <small class="text-muted">Root Mean Squared Error on hold-out test set</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="health-card mb-0 p-3 bg-light border-teal-subtle text-center">
+                <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Mean Absolute Error (MAE)</span>
+                <h3 class="fw-bold text-teal mb-1" id="evalMae">--</h3>
+                <small class="text-muted">Average absolute deviation per predicted day</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="health-card mb-0 p-3 bg-light text-center d-flex flex-column justify-content-center">
+                <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Evaluation Interpretation</span>
+                <p class="small text-secondary mb-0 fw-semibold" id="evalInterp">Calculating...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Card -->
+    <div class="health-card mb-4">
+        <div class="card-header-flex">
+            <h5 class="card-title"><i class="bi bi-clock-history text-primary"></i> Historical Records vs Future ML Projection</h5>
+            <div class="d-flex gap-2">
+                <span class="badge bg-light text-primary border">&bull; Historical Actual</span>
+                <span class="badge bg-teal-subtle text-teal border">&bull; 7-Day Forecast</span>
+                <span class="badge bg-light text-secondary border">95% Confidence Bounds</span>
+            </div>
+        </div>
+        <div style="height: 340px; position: relative;">
+            <canvas id="forecastChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Future Table Details -->
+    <div class="health-card">
+        <div class="card-header-flex">
+            <h5 class="card-title"><i class="bi bi-calendar-event text-secondary"></i> Day-by-Day Forecast Schedule</h5>
+            <span class="badge bg-light text-secondary border">Recursive Lag Autoregression</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table health-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Forecast Date</th>
+                        <th>Predicted Value</th>
+                        <th>Lower Confidence (95%)</th>
+                        <th>Upper Confidence (95%)</th>
+                        <th>Uncertainty Interval</th>
+                    </tr>
+                </thead>
+                <tbody id="futureForecastTableBody">
+                    <!-- Injected via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/forecasting.js') }}"></script>
+{% endblock %}

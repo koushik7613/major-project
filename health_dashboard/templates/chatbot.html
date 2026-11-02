@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block page_title %}AI Health & Medicine Chatbot{% endblock %}
+{% block page_subtitle %}Ask questions about general wellness, symptom education, medication precautions, and dashboard observations{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Chatbot Main Window -->
+    <div class="col-lg-8">
+        <div class="chatbot-wrapper">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-assistant-meta">
+                    <div class="chat-avatar">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">HealthPulse Clinical AI</h6>
+                        <span class="chat-status-pill">
+                            <span class="chat-status-dot"></span> Online &bull; Context Aware
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#medicineBrowseModal">
+                        <i class="bi bi-capsule me-1 text-primary"></i> Search Medicine DB
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="chat-messages-scroll" id="chatMessages">
+                <!-- Initial Welcome Message -->
+                <div class="chat-bubble assistant">
+                    <div class="bubble-content">
+                        <h6 class="fw-bold text-primary mb-1">👋 Hello! I am your AI Health & Medicine Assistant.</h6>
+                        <p class="mb-2">
+                            I can answer questions regarding general health principles, common symptoms, over-the-counter medicine information, sleep wellness, and insights about your wearable dashboard observations.
+                        </p>
+                        <div class="p-2 border rounded bg-light small text-secondary mb-2">
+                            <i class="bi bi-shield-check text-success me-1"></i>
+                            <strong>Safety Commitment:</strong> I explain health concepts in plain language. I never diagnose diseases, prescribe medications, or calculate personal dosages. For clinical concerns, always consult a qualified physician.
+                        </div>
+                        <span class="bubble-time">System Assistant</span>
+                    </div>
+                </div>
+
+                <!-- Chat History from Database -->
+                {% for msg in chat_history %}
+                <div class="chat-bubble {{ msg.role }}">
+                    <div class="bubble-content">
+                        {{ msg.content|safe }}
+                        <span class="bubble-time">{{ msg.timestamp }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Prompt Suggestions Bar -->
+            <div class="prompt-suggestions">
+                <span class="text-muted small fw-semibold d-flex align-items-center me-1">Ask:</span>
+                <button type="button" class="suggestion-pill" data-query="Analyze my uploaded dashboard data">
+                    <i class="bi bi-bar-chart-fill text-primary"></i> Analyze my dashboard data
+                </button>
+                <button type="button" class="suggestion-pill" data-query="Tell me about Paracetamol: uses, side effects, precautions">
+                    <i class="bi bi-capsule text-danger"></i> Paracetamol info
+                </button>
+                <button type="button" class="suggestion-pill" data-query="What is Ibuprofen used for and what are its precautions?">
+                    <i class="bi bi-capsule-pill text-teal"></i> Ibuprofen guide
+                </button>
+                <button type="button" class="suggestion-pill" data-query="How can I improve my deep sleep and sleep duration?">
+                    <i class="bi bi-moon-stars-fill text-indigo"></i> Improve deep sleep
+                </button>
+                <button type="button" class="suggestion-pill" data-query="What does normal resting heart rate indicate for adults?">
+                    <i class="bi bi-heart-pulse text-danger"></i> Normal heart rate
+                </button>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="chat-input-bar">
+                <form id="chatForm" class="chat-input-form">
+                    <input type="text" id="chatInput" class="chat-text-input" placeholder="Ask about health symptoms, medications, or your dashboard..." autocomplete="off">
+                    <button type="submit" class="chat-send-btn" title="Send Query">
+                        <i class="bi bi-arrow-up-circle-fill fs-5"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Reference & Guidelines Side Card -->
+    <div class="col-lg-4">
+        <!-- Safety Guardrails Card -->
+        <div class="health-card mb-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-shield-shaded text-primary me-2"></i>Assistant Safeguards</h6>
+            <ul class="small text-secondary ps-3 mb-0">
+                <li class="mb-1"><strong>Non-Diagnostic:</strong> Educational information only; does not replace doctors.</li>
+                <li class="mb-1"><strong>No Prescription:</strong> Explains common pharmacological uses, not dosage prescriptions.</li>
+                <li class="mb-1"><strong>Emergency Protocol:</strong> Directs acute symptoms (e.g. chest pain) to emergency care.</li>
+                <li><strong>Local Intelligence:</strong> Powered by structured medical knowledge with optional Gemini/OpenAI cloud models.</li>
+            </ul>
+        </div>
+
+        <!-- Medicine Quick Search Card -->
+        <div class="health-card">
+            <h6 class="fw-bold mb-2"><i class="bi bi-capsule text-teal me-2"></i>Quick Medicine Lookup</h6>
+            <p class="small text-muted mb-2">Search our clinical pharmacology database for uses, side effects, and precautions:</p>
+            <div class="input-group input-group-sm mb-3">
+                <input type="text" id="sideMedSearchInput" class="form-control" placeholder="e.g. Amoxicillin, Cetirizine...">
+                <button class="btn btn-outline-primary" id="btnSideMedSearch"><i class="bi bi-search"></i></button>
+            </div>
+            <div id="sideMedResults" class="small text-secondary">
+                <span class="text-muted fst-italic">Type a medicine name above to preview clinical details.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Medicine Search Modal -->
+<div class="modal fade" id="medicineBrowseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="bi bi-capsule text-teal me-2"></i>Clinical Medicine Information Directory</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <input type="text" id="modalMedSearchInput" class="form-control" placeholder="Search by brand name, generic name, or therapeutic category...">
+                </div>
+                <div id="modalMedSearchResults">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+<script>
+// Medicine search helpers
+document.addEventListener('DOMContentLoaded', () => {
+    const sideInput = document.getElementById('sideMedSearchInput');
+    const sideBtn = document.getElementById('btnSideMedSearch');
+    const sideResults = document.getElementById('sideMedResults');
+    const modalInput = document.getElementById('modalMedSearchInput');
+    const modalResults = document.getElementById('modalMedSearchResults');
+
+    async function searchMed(query, targetEl) {
+        if (!query.trim()) return;
+        targetEl.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Searching database...`;
+        try {
+            const res = await fetch(`/api/medicine-search?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+                targetEl.innerHTML = data.results.map(m => `
+                    <div class="p-3 border rounded bg-light mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="text-primary">${m.medicine_name}</strong>
+                            <span class="badge bg-white text-secondary border">${m.category}</span>
+                        </div>
+                        <p class="small text-muted mb-1"><strong>Generic:</strong> ${m.generic_name}</p>
+                        <p class="small mb-1"><strong>Common Uses:</strong> ${m.common_uses}</p>
+                        <p class="small mb-1 text-danger"><strong>Precautions:</strong> ${m.precautions}</p>
+                        <p class="small mb-0 text-secondary"><strong>Side Effects:</strong> ${m.side_effects}</p>
+                    </div>
+                `).join('');
+            } else {
+                targetEl.innerHTML = `<p class="text-muted small">No medications found matching '${query}'.</p>`;
+            }
+        } catch (err) {
+            targetEl.innerHTML = `<p class="text-danger small">Error searching: ${err.message}</p>`;
+        }
+    }
+
+    if (sideBtn && sideInput) {
+        sideBtn.addEventListener('click', () => searchMed(sideInput.value, sideResults));
+        sideInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchMed(sideInput.value, sideResults); });
+    }
+
+    if (modalInput && modalResults) {
+        modalInput.addEventListener('input', () => {
+            if (modalInput.value.length >= 2) searchMed(modalInput.value, modalResults);
+        });
+        // Initial populate of modal with Paracetamol
+        searchMed('Paracetamol', modalResults);
+    }
+});
+</script>
+{% endblock %}

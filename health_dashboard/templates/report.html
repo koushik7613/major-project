@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block page_title %}Clinical Health Summary Report{% endblock %}
+{% block page_subtitle %}Comprehensive analytical summary formatted for doctor consultation or personal record keeping{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .app-sidebar, .app-header, .medical-disclaimer-bar, .no-print, .app-page-footer {
+            display: none !important;
+        }
+        .app-main {
+            margin-left: 0 !important;
+            width: 100% !important;
+            background: #ffffff !important;
+        }
+        .content-wrapper {
+            padding: 0 !important;
+        }
+        .report-sheet {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+    }
+    .report-sheet {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: var(--card-radius);
+        box-shadow: var(--card-shadow);
+        padding: 2.5rem;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-3 no-print">
+    <button class="btn btn-primary-custom" onclick="window.print()">
+        <i class="bi bi-printer-fill me-1"></i> Print / Save as PDF
+    </button>
+</div>
+
+<div class="report-sheet">
+    {% if not report.has_data %}
+    <div class="text-center py-5">
+        <i class="bi bi-file-earmark-medical fs-1 text-muted d-block mb-2"></i>
+        <h5 class="fw-bold">No Data Available for Report</h5>
+        <p class="text-muted small">Upload or load wearable health data to generate a complete summary report.</p>
+        <button class="btn btn-primary-custom btn-sm btn-load-sample-data">Load 90-Day Sample Dataset</button>
+    </div>
+    {% else %}
+    <!-- Document Header -->
+    <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" width="36" height="36" alt="Pulse">
+                <h4 class="fw-bold mb-0 text-dark">HealthPulse Analytical Summary Report</h4>
+            </div>
+            <small class="text-muted">{{ institute_name }} &bull; Local Biometric Intelligence</small>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-light text-secondary border d-block mb-1">Date Generated</span>
+            <small class="fw-semibold text-dark">{{ report.generated_at }}</small>
+        </div>
+    </div>
+
+    <!-- Patient Demographics & Goals -->
+    <div class="row g-3 p-3 bg-light rounded-3 border mb-4">
+        <div class="col-sm-6 col-md-3">
+            <span class="text-muted small d-block">User / Patient</span>
+            <strong class="text-dark">{{ report.patient.name }}</strong>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <span class="text-muted small d-block">Age / Gender</span>
+            <strong class="text-dark">{{ report.patient.age }} yrs &bull; {{ report.patient.gender }}</strong>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <span class="text-muted small d-block">Weight / Height</span>
+            <strong class="text-dark">{{ report.patient.weight_kg }} kg &bull; {{ report.patient.height_cm }} cm</strong>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <span class="text-muted small d-block">Calculated BMI</span>
+            <strong class="text-primary">{{ report.patient.bmi }} kg/m²</strong>
+        </div>
+    </div>
+
+    <!-- Health Vitality Score & Period -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="p-3 border rounded h-100">
+                <span class="text-muted small text-uppercase fw-semibold d-block mb-1">Overall Health Vitality Index</span>
+                <div class="d-flex align-items-baseline gap-2 mb-1">
+                    <span class="fs-1 fw-bold text-primary">{{ report.health_score.score }}</span>
+                    <span class="text-muted">/ 100</span>
+                    <span class="badge bg-{{ report.health_score.color }} ms-auto">{{ report.health_score.status }}</span>
+                </div>
+                <small class="text-secondary">Synthesizes steps achievement, sleep consistency, and resting pulse normality.</small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="p-3 border rounded h-100">
+                <span class="text-muted small text-uppercase fw-semibold d-block mb-1">Wearable Monitoring Window</span>
+                <div class="fw-bold text-dark fs-5 mb-1">{{ report.period.start }} &rarr; {{ report.period.end }}</div>
+                <small class="text-muted">Total of <strong>{{ report.period.total_days }} consecutive days</strong> analyzed from wearable records.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vital Signs Table -->
+    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-activity text-primary me-1"></i> Biometric Aggregates Summary</h6>
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered table-sm align-middle small mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Metric Parameter</th>
+                    <th>Average Recorded</th>
+                    <th>Extremes / Peak</th>
+                    <th>Standard Adult Reference</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Daily Steps</strong></td>
+                    <td class="text-primary fw-semibold">{{ "{:,}".format(report.vitals_summary.avg_steps) }} steps/day</td>
+                    <td>Max: {{ "{:,}".format(report.vitals_summary.max_steps) }}</td>
+                    <td class="text-muted">7,000 &ndash; 10,000 steps</td>
+                </tr>
+                <tr>
+                    <td><strong>Resting Heart Rate</strong></td>
+                    <td class="fw-semibold">{{ report.vitals_summary.avg_resting_hr }} bpm</td>
+                    <td>Min: {{ report.vitals_summary.min_resting_hr }} bpm &bull; Max: {{ report.vitals_summary.max_heart_rate }} bpm</td>
+                    <td class="text-muted">60 &ndash; 100 bpm</td>
+                </tr>
+                <tr>
+                    <td><strong>Sleep Duration</strong></td>
+                    <td class="fw-semibold">{{ report.vitals_summary.avg_sleep_hours }} hours/night</td>
+                    <td>Deep Sleep: {{ report.vitals_summary.avg_deep_sleep }} hours</td>
+                    <td class="text-muted">7.0 &ndash; 9.0 hours</td>
+                </tr>
+                <tr>
+                    <td><strong>Active Physical Exercise</strong></td>
+                    <td class="fw-semibold">{{ report.vitals_summary.avg_active_mins }} active mins/day</td>
+                    <td>Calories: {{ "{:,}".format(report.vitals_summary.avg_calories) }} kcal/day</td>
+                    <td class="text-muted">&ge; 30 mins moderate activity</td>
+                </tr>
+                <tr>
+                    <td><strong>Blood Oxygen (SpO2)</strong></td>
+                    <td class="fw-semibold">{{ report.vitals_summary.avg_spo2 }}%</td>
+                    <td>-</td>
+                    <td class="text-muted">95% &ndash; 100%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Key Insights -->
+    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-check2-circle text-success me-1"></i> Key Analytical Observations</h6>
+    <ul class="small text-secondary ps-3 mb-4">
+        {% for takeaway in report.key_takeaways %}
+            <li class="mb-1">{{ takeaway }}</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Anomaly Section if Any -->
+    {% if report.anomalies %}
+    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-exclamation-diamond text-danger me-1"></i> Noted Pattern Variations (Last 5 Flagged)</h6>
+    <div class="table-responsive mb-4">
+        <table class="table table-sm table-hover align-middle small mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Metric</th>
+                    <th>Recorded</th>
+                    <th>Baseline</th>
+                    <th>Analytical Finding</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in report.anomalies[:5] %}
+                <tr>
+                    <td>{{ a.record_date }}</td>
+                    <td><strong>{{ a.metric_name }}</strong></td>
+                    <td>{{ a.actual_value }}</td>
+                    <td>{{ a.baseline_value }}</td>
+                    <td class="text-muted">{{ a.explanation }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Formal Legal / Medical Disclaimer -->
+    <div class="p-3 bg-light border rounded small text-muted">
+        <strong>CLINICAL CONSULTATION NOTICE:</strong> {{ report.disclaimer }}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

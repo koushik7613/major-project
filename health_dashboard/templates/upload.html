@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block page_title %}Upload Health Data{% endblock %}
+{% block page_subtitle %}Ingest wearable device CSV exports, configure column mapping, and inspect data{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <!-- Drag and Drop Box -->
+        <div class="health-card">
+            <h5 class="fw-bold mb-1"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Select or Drop Wearable CSV File</h5>
+            <p class="text-muted small mb-3">Upload your wearable fitness export. The system validates headers, handles missing values, and removes duplicate date entries automatically.</p>
+
+            <div class="upload-dropzone" id="uploadDropzone">
+                <i class="bi bi-cloud-arrow-up upload-icon"></i>
+                <h5 class="fw-bold mb-1">Drag and drop your wearable CSV file here</h5>
+                <p class="text-muted small mb-3">Supports Apple Watch, Fitbit, Garmin, Google Fit, or custom exports</p>
+                <button type="button" class="btn btn-outline-primary btn-sm px-4">Browse Files</button>
+            </div>
+            <input type="file" id="csvFileInput" class="d-none" accept=".csv">
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Quick Sample Dataset Card -->
+        <div class="health-card bg-light border-primary-subtle h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-lightning-charge-fill text-warning fs-4"></i>
+                    <h5 class="fw-bold mb-0">Quick Demo Datasets</h5>
+                </div>
+                <p class="text-muted small">
+                    Don't have a wearable CSV file handy? Click below to instantly load our realistic 90-day multi-sensor biometric dataset or fitbit-format dataset.
+                </p>
+                <ul class="small text-secondary ps-3 mb-3">
+                    <li>90 consecutive days of biometric records</li>
+                    <li>Steps, Heart Rate, Sleep & Activity</li>
+                    <li>Authentic anomalies for ML detection</li>
+                </ul>
+            </div>
+            <div>
+                <button class="btn btn-teal-custom w-100 py-2 btn-load-sample-data">
+                    <i class="bi bi-database-fill-check me-1"></i> Instant 90-Day Demo Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Mapping and Preview Section (Appears after CSV selected) -->
+<div id="mappingSection" class="health-card d-none">
+    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+        <div>
+            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-sliders text-teal me-2"></i>Flexible Column Mapping & Validation</h5>
+            <small class="text-muted">Review our auto-detected column matches and customize them if needed.</small>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-primary-subtle text-primary border" id="detectedRowsBadge">0 Rows</span>
+            <span class="badge bg-teal-subtle text-teal border" id="detectedColsBadge">0 Columns</span>
+        </div>
+    </div>
+
+    <!-- Mapping Selects Grid -->
+    <div class="row g-2 mb-4" id="mappingSelectsContainer">
+        <!-- Injected via JavaScript -->
+    </div>
+
+    <!-- Data Preview Table -->
+    <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-table me-1"></i> First 5 Rows Data Preview</h6>
+    <div id="previewTableContainer" class="border rounded p-2 bg-light mb-4">
+        <!-- Injected via JavaScript -->
+    </div>
+
+    <!-- Confirm Button -->
+    <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" onclick="window.location.reload()">Cancel</button>
+        <button type="button" id="btnConfirmProcess" class="btn btn-primary-custom px-4">
+            <i class="bi bi-check2-circle me-1"></i> Confirm & Import Dataset
+        </button>
+    </div>
+</div>
+
+<!-- Upload History Table -->
+<div class="health-card">
+    <div class="card-header-flex">
+        <h5 class="card-title"><i class="bi bi-archive text-secondary"></i> Dataset Upload History</h5>
+        {% if files %}
+        <form method="POST" action="{{ url_for('auth.clear_data') }}" onsubmit="return confirm('Are you sure you want to delete all uploaded health data?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash3 me-1"></i> Wipe All Data
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if files %}
+    <div class="table-responsive">
+        <table class="table health-table mb-0">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Uploaded Date</th>
+                    <th>Records Processed</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in files %}
+                <tr>
+                    <td><strong class="text-dark"><i class="bi bi-filetype-csv text-primary me-1"></i> {{ f.original_name }}</strong></td>
+                    <td class="text-muted">{{ f.upload_time }}</td>
+                    <td><span class="badge bg-light text-primary border">{{ f.row_count }} records</span></td>
+                    <td><span class="badge bg-success-subtle text-success"><i class="bi bi-check2"></i> Processed</span></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('api_delete_file', file_id=f.id) }}" onsubmit="return confirm('Remove this dataset and its records?');" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete dataset">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted">
+        <i class="bi bi-inbox fs-2 d-block mb-1"></i>
+        <span>No uploaded datasets found yet.</span>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}

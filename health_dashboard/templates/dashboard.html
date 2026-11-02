@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block page_title %}Health Overview{% endblock %}
+{% block page_subtitle %}Real-time Biometric Analysis & Personal Health Insights{% endblock %}
+
+{% block content %}
+{% if not summary.has_data %}
+<!-- Empty State when no data uploaded -->
+<div class="health-card text-center py-5">
+    <div class="mb-3">
+        <i class="bi bi-activity text-primary" style="font-size: 4rem;"></i>
+    </div>
+    <h3 class="fw-bold mb-2">No Wearable Data Loaded</h3>
+    <p class="text-muted max-w-lg mx-auto mb-4" style="max-width: 540px;">
+        Upload exported CSV data from your smartwatch or fitness band to unlock interactive trend charts, machine learning anomaly detection, and time-series forecasting.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+        <button class="btn btn-primary-custom px-4 py-2 btn-load-sample-data">
+            <i class="bi bi-lightning-charge-fill me-1"></i> Load Sample 90-Day Dataset
+        </button>
+        <a href="{{ url_for('upload_view') }}" class="btn btn-outline-secondary px-4 py-2">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Upload Your Own CSV
+        </a>
+    </div>
+</div>
+{% else %}
+
+<!-- Row 1: Health Vitality Score & Quick Highlights -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="health-score-container h-100">
+            <div class="score-circle">
+                <div class="score-num">{{ summary.health_score.score }}</div>
+                <div class="score-max">/ 100</div>
+            </div>
+            <div class="flex-grow-1">
+                <span class="badge bg-{{ summary.health_score.color }} mb-1">{{ summary.health_score.status }}</span>
+                <h5 class="fw-bold mb-1">Health Vitality Score</h5>
+                <p class="text-muted small mb-2">Computed multi-dimensional wellness index based on steps, sleep, cardiac stability, and active habits.</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-white text-secondary border">Steps: {{ summary.health_score.breakdown.steps.points }}/30</span>
+                    <span class="badge bg-white text-secondary border">Sleep: {{ summary.health_score.breakdown.sleep.points }}/25</span>
+                    <span class="badge bg-white text-secondary border">Heart: {{ summary.health_score.breakdown.heart_rate.points }}/25</span>
+                    <span class="badge bg-white text-secondary border">Activity: {{ summary.health_score.breakdown.activity.points }}/20</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="health-card h-100 mb-0 d-flex flex-column justify-content-center">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Tracking Period Overview</span>
+                <span class="badge bg-light text-primary border">{{ summary.total_records }} Days Logged</span>
+            </div>
+            <h4 class="fw-bold mb-2">{{ summary.date_range.start }} &rarr; {{ summary.date_range.end }}</h4>
+            <div class="row g-2 mt-1">
+                <div class="col-sm-4">
+                    <div class="p-2 border rounded bg-light text-center">
+                        <small class="text-muted d-block">Distance Covered</small>
+                        <strong class="text-dark fs-5">{{ summary.kpis.total_distance_km }}</strong> <small>km</small>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="p-2 border rounded bg-light text-center">
+                        <small class="text-muted d-block">Mean Blood Oxygen</small>
+                        <strong class="text-dark fs-5">{{ summary.kpis.avg_spo2 }}%</strong> <small>SpO2</small>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="p-2 border rounded bg-light text-center">
+                        <small class="text-muted d-block">Stress Index</small>
+                        <strong class="text-dark fs-5">{{ summary.kpis.avg_stress }}</strong> <small>/100</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Four Core Metric KPI Cards -->
+<div class="row g-3 mb-4">
+    <!-- Steps Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card" style="--kpi-accent: #0284c7; --kpi-bg: #e0f2fe; --kpi-color: #0284c7;">
+            <div class="kpi-header">
+                <span class="kpi-label">Daily Steps</span>
+                <div class="kpi-icon-wrap"><i class="bi bi-person-walking"></i></div>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{{ "{:,}".format(summary.kpis.avg_steps) }}</span>
+                <span class="kpi-unit">avg/day</span>
+            </div>
+            <div class="kpi-subtext">
+                {% if summary.trend_deltas.steps >= 0 %}
+                    <span class="text-success fw-semibold"><i class="bi bi-arrow-up-right"></i> +{{ summary.trend_deltas.steps }}%</span> vs last week
+                {% else %}
+                    <span class="text-danger fw-semibold"><i class="bi bi-arrow-down-right"></i> {{ summary.trend_deltas.steps }}%</span> vs last week
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Heart Rate Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card" style="--kpi-accent: #ef4444; --kpi-bg: #fee2e2; --kpi-color: #ef4444;">
+            <div class="kpi-header">
+                <span class="kpi-label">Resting Heart Rate</span>
+                <div class="kpi-icon-wrap"><i class="bi bi-heart-pulse-fill"></i></div>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{{ summary.kpis.avg_resting_hr }}</span>
+                <span class="kpi-unit">bpm</span>
+            </div>
+            <div class="kpi-subtext">
+                <span class="text-muted">Peak: {{ summary.kpis.max_heart_rate_recorded }} bpm</span> &bull; 
+                <span class="badge bg-light text-secondary border">Normal: 60-100</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sleep Duration Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card" style="--kpi-accent: #6366f1; --kpi-bg: #e0e7ff; --kpi-color: #6366f1;">
+            <div class="kpi-header">
+                <span class="kpi-label">Sleep Duration</span>
+                <div class="kpi-icon-wrap"><i class="bi bi-moon-stars-fill"></i></div>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{{ summary.kpis.avg_sleep_hours }}</span>
+                <span class="kpi-unit">hours/night</span>
+            </div>
+            <div class="kpi-subtext">
+                <span class="text-muted">Deep: {{ summary.kpis.avg_deep_sleep }} hrs</span> &bull; 
+                <span class="text-muted">Goal: {{ summary.user_goals.sleep_goal_hours }} hrs</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Physical Movement Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card" style="--kpi-accent: #0d9488; --kpi-bg: #ccfbf1; --kpi-color: #0d9488;">
+            <div class="kpi-header">
+                <span class="kpi-label">Physical Activity</span>
+                <div class="kpi-icon-wrap"><i class="bi bi-fire"></i></div>
+            </div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{{ summary.kpis.avg_active_mins }}</span>
+                <span class="kpi-unit">active mins</span>
+            </div>
+            <div class="kpi-subtext">
+                <span class="text-muted">Total burned: {{ "{:,}".format(summary.kpis.total_calories) }} kcal</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Interactive Visualizations -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="health-card mb-0 h-100">
+            <div class="card-header-flex">
+                <h5 class="card-title"><i class="bi bi-graph-up text-primary"></i> Daily Step Trend & Moving Average</h5>
+                <span class="badge bg-light text-secondary border">Last 30 Days</span>
+            </div>
+            <div style="height: 280px; position: relative;">
+                <canvas id="stepsOverviewChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="health-card mb-0 h-100">
+            <div class="card-header-flex">
+                <h5 class="card-title"><i class="bi bi-heart-pulse text-danger"></i> Cardiac Trends (Resting vs Avg vs Peak)</h5>
+                <span class="badge bg-light text-secondary border">Multi-axis BPM</span>
+            </div>
+            <div style="height: 280px; position: relative;">
+                <canvas id="heartRateOverviewChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 4: Sleep Architecture & Recent Biometric Records -->
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="health-card mb-0 h-100">
+            <div class="card-header-flex">
+                <h5 class="card-title"><i class="bi bi-moon text-indigo"></i> Sleep Architecture (Last 14 Days)</h5>
+                <span class="badge bg-light text-secondary border">Deep vs REM/Light</span>
+            </div>
+            <div style="height: 280px; position: relative;">
+                <canvas id="sleepOverviewChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="health-card mb-0 h-100">
+            <div class="card-header-flex">
+                <h5 class="card-title"><i class="bi bi-clock-history text-secondary"></i> Recent Biometric Entries</h5>
+                <a href="{{ url_for('upload_view') }}" class="btn btn-sm btn-outline-primary">Manage Data</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table health-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Steps</th>
+                            <th>Resting HR</th>
+                            <th>Sleep</th>
+                            <th>Active</th>
+                            <th>Calories</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in summary.recent_records %}
+                        <tr>
+                            <td class="fw-semibold text-secondary">{{ row.record_date }}</td>
+                            <td><strong class="text-primary">{{ "{:,}".format(row.steps) }}</strong></td>
+                            <td>{{ row.resting_heart_rate }} bpm</td>
+                            <td>{{ row.sleep_hours }}h</td>
+                            <td>{{ row.active_minutes }}m</td>
+                            <td>{{ row.calories_burned|int }} kcal</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
